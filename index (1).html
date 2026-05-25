@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>实验室管理端</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:#f5f5f7;color:#1c1c1e;min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+
+.layout{display:flex;min-height:100vh}
+.sidebar{width:220px;background:#fff;border-right:0.5px solid #e5e5ea;padding:40px 0;flex-shrink:0;position:fixed;top:0;bottom:0;left:0;overflow-y:auto}
+.sidebar-title{font-size:13px;font-weight:600;color:#8e8e93;padding:0 20px;margin-bottom:8px;letter-spacing:0.3px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:14px;color:#3c3c43;cursor:pointer;border-radius:0;transition:background 0.1s}
+.nav-item:hover{background:#f5f5f7}
+.nav-item.on{color:#1c1c1e;font-weight:600;background:#f5f5f7}
+.nav-icon{font-size:16px;width:20px;text-align:center;color:inherit}
+.sidebar-sep{height:0.5px;background:#e5e5ea;margin:12px 20px}
+
+.main{margin-left:220px;flex:1;padding:40px 48px;max-width:960px}
+.page-title{font-size:28px;font-weight:700;letter-spacing:-0.5px;margin-bottom:4px}
+.page-sub{font-size:14px;color:#8e8e93;margin-bottom:32px}
+.sync-txt{font-size:12px;color:#8e8e93;margin-bottom:24px}
+
+.sec{display:none}
+.sec.on{display:block}
+
+.row-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.row-hd h2{font-size:17px;font-weight:600}
+.btn{font-size:13px;padding:7px 16px;border-radius:8px;border:1px solid #e5e5ea;background:#fff;color:#1c1c1e;cursor:pointer;font-weight:500;transition:all 0.1s}
+.btn:hover{background:#f5f5f7}
+.btn.primary{background:#1c1c1e;color:#fff;border-color:#1c1c1e}
+.btn.primary:hover{background:#3c3c43}
+.btn.danger{color:#cc0000;border-color:#ffb3b3}
+.btn.danger:hover{background:#fff5f5}
+.btn.sm{font-size:12px;padding:5px 12px}
+
+.card{background:#fff;border-radius:13px;margin-bottom:12px;overflow:hidden;border:0.5px solid #e5e5ea}
+.card-body{padding:20px}
+
+.batch-hd{display:flex;align-items:flex-start;justify-content:space-between;padding:18px 20px 0}
+.batch-name-big{font-size:17px;font-weight:600}
+.batch-meta{font-size:13px;color:#8e8e93;margin-top:2px}
+.batch-actions{display:flex;gap:8px;flex-shrink:0;margin-left:16px}
+
+.step-row{display:flex;align-items:center;gap:0;padding:16px 20px;overflow-x:auto}
+.step-node{display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;cursor:pointer}
+.step-circle{width:36px;height:36px;border-radius:50%;border:1.5px solid #e5e5ea;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#8e8e93;background:#fff;transition:all 0.15s}
+.step-circle:hover{border-color:#1c1c1e;color:#1c1c1e}
+.step-circle.done{background:#1c1c1e;border-color:#1c1c1e;color:#fff}
+.step-circle.curr{background:#f5f5f7;border-color:#1c1c1e;color:#1c1c1e}
+.step-label{font-size:10px;color:#8e8e93;text-align:center;width:40px;line-height:1.3}
+.step-line{height:1.5px;width:16px;background:#e5e5ea;flex-shrink:0;margin-bottom:20px}
+.step-line.done{background:#1c1c1e}
+
+.mut-tags{display:flex;flex-wrap:wrap;gap:6px;padding:0 20px 16px}
+.mut-tag{font-size:12px;padding:4px 10px;border-radius:20px;background:#f5f5f7;color:#3c3c43;font-weight:500;display:flex;align-items:center;gap:6px}
+.mut-tag .kick{font-size:11px;color:#8e8e93;cursor:pointer;padding:0 2px}
+.mut-tag .kick:hover{color:#cc0000}
+.mut-tag.fail{background:#fff0f0;color:#cc0000}
+
+.warn-list{padding:0 20px 16px;display:flex;flex-direction:column;gap:6px}
+.warn-item{font-size:13px;color:#3c3c43;padding:8px 12px;background:#fafafa;border-radius:8px;border-left:2px solid #e5e5ea;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.warn-del{font-size:11px;color:#8e8e93;cursor:pointer}
+.warn-del:hover{color:#cc0000}
+
+.task-row-d{display:flex;align-items:center;padding:12px 20px;border-top:0.5px solid #f5f5f7;gap:12px}
+.task-chk{width:18px;height:18px;border-radius:50%;border:1.5px solid #d1d1d6;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s}
+.task-chk.on{background:#1c1c1e;border-color:#1c1c1e}
+.task-chk.on::after{content:'';width:5px;height:3px;border-left:1.5px solid #fff;border-bottom:1.5px solid #fff;transform:rotate(-45deg) translateY(-1px);display:block}
+.task-txt{font-size:14px;color:#1c1c1e;flex:1}
+.task-txt.done{color:#8e8e93;text-decoration:line-through}
+
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;font-weight:600;color:#8e8e93;margin-bottom:6px;display:block;text-transform:uppercase;letter-spacing:0.3px}
+.form-input{width:100%;padding:10px 12px;border:1px solid #e5e5ea;border-radius:9px;font-size:14px;color:#1c1c1e;background:#fff;font-family:inherit;outline:none;transition:border 0.15s}
+.form-input:focus{border-color:#1c1c1e}
+.form-row{display:flex;gap:10px}
+.form-row .form-group{flex:1}
+
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:200;align-items:center;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:#fff;border-radius:16px;padding:28px;width:480px;max-width:90vw;max-height:85vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:20px}
+.modal-actions{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+
+.mut-input-row{display:flex;gap:8px;align-items:center}
+.mut-input-row input{flex:1}
+.mut-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.mut-pill{font-size:12px;padding:4px 10px;border-radius:20px;background:#f5f5f7;color:#3c3c43;display:flex;align-items:center;gap:5px}
+.mut-pill span{cursor:pointer;color:#8e8e93}
+.mut-pill span:hover{color:#cc0000}
+
+.step-select{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.step-opt{font-size:12px;padding:5px 12px;border-radius:20px;border:1px solid #e5e5ea;cursor:pointer;color:#3c3c43;background:#fff;transition:all 0.1s}
+.step-opt.sel{background:#1c1c1e;color:#fff;border-color:#1c1c1e}
+
+.learn-row-d{display:flex;align-items:center;padding:14px 20px;border-top:0.5px solid #f5f5f7;gap:16px}
+.learn-row-d:first-child{border-top:none}
+.learn-info{flex:1}
+.learn-title-d{font-size:14px;font-weight:500}
+.learn-sub-d{font-size:12px;color:#8e8e93;margin-top:1px}
+.bar-bg{height:4px;background:#f0f0f0;border-radius:2px;overflow:hidden;width:120px}
+.bar-fill{height:100%;background:#1c1c1e;border-radius:2px;transition:width 0.3s}
+.learn-pct-d{font-size:13px;font-weight:600;width:36px;text-align:right}
+.learn-ctrls{display:flex;gap:6px}
+
+.empty-state{text-align:center;padding:48px 24px;color:#8e8e93;font-size:14px}
+</style>
+</head>
+<body>
+<div class="layout">
+<div class="sidebar">
+  <div style="padding:0 20px;margin-bottom:24px">
+    <div style="font-size:17px;font-weight:700;color:#1c1c1e">大创实验室</div>
+    <div style="font-size:12px;color:#8e8e93;margin-top:2px" id="sb-sync">加载中...</div>
+  </div>
+  <div class="sidebar-title">管理</div>
+  <div class="nav-item on" id="nav-batches" onclick="sw('batches')">
+    <span class="nav-icon">◈</span> 批次管理
+  </div>
+  <div class="nav-item" id="nav-tasks" onclick="sw('tasks')">
+    <span class="nav-icon">◻</span> 任务列表
+  </div>
+  <div class="sidebar-sep"></div>
+  <div class="sidebar-title">其他</div>
+  <div class="nav-item" id="nav-learn" onclick="sw('learn')">
+    <span class="nav-icon">◷</span> 学习进度
+  </div>
+</div>
+
+<div class="main">
+  <div class="sync-txt" id="sync-txt">加载中...</div>
+
+  <div class="sec on" id="sec-batches">
+    <div class="row-hd">
+      <div>
+        <div class="page-title">批次管理</div>
+        <div class="page-sub">创建和推进实验批次</div>
+      </div>
+      <button class="btn primary" onclick="openModal('batch')">＋ 新建批次</button>
+    </div>
+    <div id="batch-list"></div>
+  </div>
+
+  <div class="sec" id="sec-tasks">
+    <div class="row-hd">
+      <div>
+        <div class="page-title">任务列表</div>
+        <div class="page-sub">手机端显示的今日任务</div>
+      </div>
+      <button class="btn primary" onclick="openModal('task')">＋ 添加任务</button>
+    </div>
+    <div id="task-list"></div>
+  </div>
+
+  <div class="sec" id="sec-learn">
+    <div class="row-hd">
+      <div>
+        <div class="page-title">学习进度</div>
+        <div class="page-sub">文献和新方向追踪</div>
+      </div>
+      <button class="btn primary" onclick="openModal('learn')">＋ 添加项目</button>
+    </div>
+    <div class="card" id="learn-list"></div>
+  </div>
+</div>
+</div>
+
+<div class="modal-bg" id="modal-bg" onclick="closeMBG(event)">
+  <div class="modal" id="modal-inner"></div>
+</div>
+
+<script>
+const SB_URL='https://yyzfcskdwhhmfyhfnixp.supabase.co';
+const SB_KEY='sb_publishable_yc02v_odmbh7FAixILXsWA_vpPfzw6B';
+const STEPS=['PCR','纯化','消化','连接','转化','涂板','测序','跑蛋白'];
+
+let S={batches:[],tasks:[],learns:[],nextBatchId:1,nextTaskId:1,nextLearnId:1,nextMutId:1};
+let saving=false,dirty=false;
+let tmpMuts=[];
+let kickMut=null;
+
+async function load(){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/lab_state?id=eq.main&select=data`,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
+    const rows=await r.json();
+    if(rows&&rows[0]&&rows[0].data&&rows[0].data.batches!==undefined){
+      Object.assign(S,rows[0].data);
+    }
+    setSynced();
+  }catch(e){setSyncTxt('离线模式');}
+  renderAll();
+}
+
+async function save(){
+  if(saving){dirty=true;return;}
+  saving=true;setSyncTxt('保存中...');
+  try{
+    await fetch(`${SB_URL}/rest/v1/lab_state?id=eq.main`,{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({data:S,updated_at:new Date().toISOString()})});
+    setSynced();
+  }catch(e){setSyncTxt('同步失败');}
+  saving=false;
+  if(dirty){dirty=false;save();}
+}
+
+function setSynced(){const t='已同步 '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});document.getElementById('sync-txt').textContent=t;document.getElementById('sb-sync').textContent=t;}
+function setSyncTxt(t){document.getElementById('sync-txt').textContent=t;document.getElementById('sb-sync').textContent=t;}
+
+function sw(t){
+  ['batches','tasks','learn'].forEach(n=>{
+    document.getElementById('sec-'+n).classList.toggle('on',n===t);
+    document.getElementById('nav-'+n).classList.toggle('on',n===t);
+  });
+  renderAll();
+}
+
+function renderAll(){renderBatches();renderTasks();renderLearn();}
+
+function renderBatches(){
+  const el=document.getElementById('batch-list');
+  const active=S.batches.filter(b=>b.status==='active');
+  const done=S.batches.filter(b=>b.status==='done');
+  if(!S.batches.length){el.innerHTML='<div class="empty-state">暂无批次，点右上角新建</div>';return;}
+  let html='';
+  if(active.length){
+    html+='<div style="font-size:11px;font-weight:600;color:#8e8e93;letter-spacing:0.4px;text-transform:uppercase;margin-bottom:10px">进行中</div>';
+    active.forEach(b=>{
+      const stepNodes=STEPS.map((s,i)=>{
+        const isDone=i<b.step;
+        const isCurr=i===b.step;
+        const cls=isDone?'done':isCurr?'curr':'';
+        const line=i<STEPS.length-1?`<div class="step-line${isDone?' done':''}"></div>`:'';
+        return `<div class="step-node" onclick="setStep(${b.id},${i})" title="点击设为当前步骤"><div class="step-circle ${cls}">${i+1}</div><div class="step-label">${s}</div></div>${line}`;
+      }).join('');
+      const mutTags=b.mutations.map(m=>`<span class="mut-tag${m.status==='fail'?' fail':''}">${m.name}<span class="kick" onclick="openKick(${b.id},${m.id})" title="踢出此突变">✕</span></span>`).join('');
+      const warns=(b.warns||[]).map((w,i)=>`<div class="warn-item">${w}<span class="warn-del" onclick="delWarn(${b.id},${i})">删除</span></div>`).join('');
+      const bTasks=S.tasks.filter(t=>t.batchId===b.id);
+      const taskRows=bTasks.map(t=>`<div class="task-row-d"><div class="task-chk${t.done?' on':''}" onclick="togTask(${t.id})"></div><span class="task-txt${t.done?' done':''}">${t.text}</span><button class="btn sm danger" onclick="delTask(${t.id})">删除</button></div>`).join('');
+      html+=`<div class="card" style="margin-bottom:16px">
+        <div class="batch-hd">
+          <div><div class="batch-name-big">${b.name}</div><div class="batch-meta">当前步骤：${STEPS[b.step]||'完成'} · ${b.mutations.length}个突变</div></div>
+          <div class="batch-actions">
+            <button class="btn sm" onclick="nextStep(${b.id})">推进 →</button>
+            <button class="btn sm" onclick="openModal('warn',${b.id})">＋ 注意事项</button>
+            <button class="btn sm" onclick="openModal('batchTask',${b.id})">＋ 任务</button>
+            <button class="btn sm danger" onclick="finishBatch(${b.id})">标记完成</button>
+          </div>
+        </div>
+        <div class="step-row">${stepNodes}</div>
+        <div class="mut-tags">${mutTags}</div>
+        ${warns?`<div class="warn-list">${warns}</div>`:''}
+        ${taskRows}
+      </div>`;
+    });
+  }
+  if(done.length){
+    html+='<div style="font-size:11px;font-weight:600;color:#8e8e93;letter-spacing:0.4px;text-transform:uppercase;margin:20px 0 10px">已完成</div>';
+    done.forEach(b=>{
+      const chips=b.mutations.map(m=>`<span class="mut-tag">${m.name}</span>`).join('');
+      html+=`<div class="card"><div class="batch-hd" style="padding-bottom:14px"><div><div class="batch-name-big" style="color:#8e8e93">${b.name}</div><div class="batch-meta">已完成</div></div><button class="btn sm danger" onclick="delBatch(${b.id})">删除</button></div><div class="mut-tags">${chips}</div></div>`;
+    });
+  }
+  el.innerHTML=html;
+}
+
+function renderTasks(){
+  const el=document.getElementById('task-list');
+  const misc=S.tasks.filter(t=>!t.batchId);
+  if(!misc.length){el.innerHTML='<div class="empty-state">暂无独立任务</div>';return;}
+  let html='<div class="card">';
+  misc.forEach(t=>{
+    html+=`<div class="task-row-d"><div class="task-chk${t.done?' on':''}" onclick="togTask(${t.id})"></div><span class="task-txt${t.done?' done':''}">${t.text}</span><button class="btn sm danger" onclick="delTask(${t.id})">删除</button></div>`;
+  });
+  el.innerHTML=html+'</div>';
+}
+
+function renderLearn(){
+  const el=document.getElementById('learn-list');
+  if(!S.learns.length){el.innerHTML='<div class="empty-state">暂无学习项目</div>';return;}
+  el.innerHTML=S.learns.map(l=>`
+    <div class="learn-row-d">
+      <div class="learn-info">
+        <div class="learn-title-d">${l.title}</div>
+        <div class="learn-sub-d">${l.sub}</div>
+      </div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${l.pct}%"></div></div>
+      <div class="learn-pct-d">${l.pct}%</div>
+      <div class="learn-ctrls">
+        <button class="btn sm" onclick="updLearn(${l.id},-10)">−</button>
+        <button class="btn sm" onclick="updLearn(${l.id},10)">＋</button>
+        <button class="btn sm danger" onclick="delLearn(${l.id})">删除</button>
+      </div>
+    </div>`).join('');
+}
+
+function setStep(bid,step){
+  const b=S.batches.find(x=>x.id===bid);
+  if(b&&b.status==='active'){b.step=step;save();renderBatches();}
+}
+function nextStep(bid){
+  const b=S.batches.find(x=>x.id===bid);
+  if(b&&b.step<STEPS.length-1){b.step++;save();renderBatches();}
+}
+function finishBatch(bid){
+  if(!confirm('标记此批次为完成？'))return;
+  const b=S.batches.find(x=>x.id===bid);
+  if(b){b.status='done';save();renderBatches();}
+}
+function delBatch(bid){
+  if(!confirm('删除此批次？'))return;
+  S.batches=S.batches.filter(x=>x.id!==bid);
+  save();renderBatches();
+}
+function delWarn(bid,idx){
+  const b=S.batches.find(x=>x.id===bid);
+  if(b){b.warns.splice(idx,1);save();renderBatches();}
+}
+function togTask(id){
+  const t=S.tasks.find(x=>x.id===id);
+  if(t){t.done=!t.done;save();renderAll();}
+}
+function delTask(id){
+  S.tasks=S.tasks.filter(x=>x.id!==id);
+  save();renderAll();
+}
+function updLearn(id,d){
+  const l=S.learns.find(x=>x.id===id);
+  if(l){l.pct=Math.max(0,Math.min(100,l.pct+d));save();renderLearn();}
+}
+function delLearn(id){
+  S.learns=S.learns.filter(x=>x.id!==id);
+  save();renderLearn();
+}
+
+function openKick(bid,mid){
+  const b=S.batches.find(x=>x.id===bid);
+  const m=b&&b.mutations.find(x=>x.id===mid);
+  if(!b||!m)return;
+  kickMut={bid,mid,name:m.name};
+  let selStep=0;
+  const opts=STEPS.map((s,i)=>`<div class="step-opt${i===0?' sel':''}" id="kopt-${i}" onclick="selKStep(${i})">${s}</div>`).join('');
+  showModal(`
+    <div class="modal-title">踢出 ${m.name}</div>
+    <div class="form-group">
+      <div class="form-label">从哪步重新开始</div>
+      <div class="step-select">${opts}</div>
+    </div>
+    <div class="form-group">
+      <div class="form-label">新批次名称</div>
+      <input class="form-input" id="kick-name" value="${m.name} 补救批" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">取消</button>
+      <button class="btn primary" onclick="doKick()">确认踢出</button>
+    </div>`);
+}
+
+let kickStep=0;
+function selKStep(i){
+  kickStep=i;
+  STEPS.forEach((_,j)=>{
+    const el=document.getElementById('kopt-'+j);
+    if(el)el.classList.toggle('sel',j===i);
+  });
+}
+
+function doKick(){
+  if(!kickMut)return;
+  const name=document.getElementById('kick-name').value.trim()||kickMut.name+' 补救批';
+  const b=S.batches.find(x=>x.id===kickMut.bid);
+  if(!b)return;
+  const m=b.mutations.find(x=>x.id===kickMut.mid);
+  if(!m)return;
+  b.mutations=b.mutations.filter(x=>x.id!==kickMut.mid);
+  S.batches.push({id:S.nextBatchId++,name,status:'active',step:kickStep,mutations:[{id:S.nextMutId++,name:m.name,status:'active'}],warns:[],createdAt:new Date().toISOString()});
+  kickMut=null;
+  save();closeModal();renderBatches();
+}
+
+function openModal(type,bid){
+  if(type==='batch'){
+    tmpMuts=[];
+    showModal(`
+      <div class="modal-title">新建批次</div>
+      <div class="form-group">
+        <div class="form-label">批次名称</div>
+        <input class="form-input" id="bn-name" placeholder="如：第一批 R6R7R8" />
+      </div>
+      <div class="form-group">
+        <div class="form-label">包含突变</div>
+        <div class="mut-input-row">
+          <input class="form-input" id="bn-mut" placeholder="突变名称，如 R6" onkeydown="if(event.key==='Enter')addTmpMut()" />
+          <button class="btn" onclick="addTmpMut()">添加</button>
+        </div>
+        <div class="mut-pills" id="tmp-muts"></div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">从哪步开始</div>
+        <div class="step-select" id="bn-steps">${STEPS.map((s,i)=>`<div class="step-opt${i===0?' sel':''}" id="bopt-${i}" onclick="selBStep(${i})">${s}</div>`).join('')}</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal()">取消</button>
+        <button class="btn primary" onclick="saveBatch()">创建</button>
+      </div>`);
+  }else if(type==='warn'){
+    showModal(`
+      <div class="modal-title">添加注意事项</div>
+      <div class="form-group">
+        <input class="form-input" id="warn-text" placeholder="如：配胶插宽梳子" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal()">取消</button>
+        <button class="btn primary" onclick="saveWarn(${bid})">添加</button>
+      </div>`);
+  }else if(type==='batchTask'){
+    showModal(`
+      <div class="modal-title">添加任务到批次</div>
+      <div class="form-group">
+        <input class="form-input" id="bt-text" placeholder="任务描述" />
+      </div>
+      <div class="form-group">
+        <div class="form-label">注意事项（可选）</div>
+        <input class="form-input" id="bt-warn" placeholder="特殊注意点" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal()">取消</button>
+        <button class="btn primary" onclick="saveBatchTask(${bid})">添加</button>
+      </div>`);
+  }else if(type==='task'){
+    showModal(`
+      <div class="modal-title">添加独立任务</div>
+      <div class="form-group">
+        <input class="form-input" id="it-text" placeholder="任务描述" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal()">取消</button>
+        <button class="btn primary" onclick="saveIndepTask()">添加</button>
+      </div>`);
+  }else if(type==='learn'){
+    showModal(`
+      <div class="modal-title">添加学习项目</div>
+      <div class="form-group">
+        <input class="form-input" id="ln-title" placeholder="主题，如 Western Blot原理" />
+      </div>
+      <div class="form-group">
+        <input class="form-input" id="ln-sub" placeholder="类型，如 文献 / 操作" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal()">取消</button>
+        <button class="btn primary" onclick="saveLearn()">添加</button>
+      </div>`);
+  }
+}
+
+let batchStartStep=0;
+function selBStep(i){
+  batchStartStep=i;
+  STEPS.forEach((_,j)=>{const el=document.getElementById('bopt-'+j);if(el)el.classList.toggle('sel',j===i);});
+}
+
+function addTmpMut(){
+  const inp=document.getElementById('bn-mut');
+  const name=inp.value.trim();if(!name)return;
+  tmpMuts.push({id:S.nextMutId++,name,status:'active'});
+  inp.value='';
+  document.getElementById('tmp-muts').innerHTML=tmpMuts.map((m,i)=>`<span class="mut-pill">${m.name}<span onclick="rmTmpMut(${i})">✕</span></span>`).join('');
+}
+function rmTmpMut(i){tmpMuts.splice(i,1);document.getElementById('tmp-muts').innerHTML=tmpMuts.map((m,j)=>`<span class="mut-pill">${m.name}<span onclick="rmTmpMut(${j})">✕</span></span>`).join('');}
+
+function saveBatch(){
+  const name=document.getElementById('bn-name').value.trim();
+  if(!name){alert('请填写批次名称');return;}
+  if(!tmpMuts.length){alert('请至少添加一个突变');return;}
+  S.batches.push({id:S.nextBatchId++,name,status:'active',step:batchStartStep,mutations:tmpMuts,warns:[],createdAt:new Date().toISOString()});
+  batchStartStep=0;tmpMuts=[];
+  save();closeModal();renderBatches();
+}
+function saveWarn(bid){
+  const w=document.getElementById('warn-text').value.trim();if(!w)return;
+  const b=S.batches.find(x=>x.id===bid);
+  if(b){if(!b.warns)b.warns=[];b.warns.push(w);save();closeModal();renderBatches();}
+}
+function saveBatchTask(bid){
+  const text=document.getElementById('bt-text').value.trim();if(!text)return;
+  const warn=document.getElementById('bt-warn').value.trim();
+  S.tasks.push({id:S.nextTaskId++,text,done:false,batchId:bid,warns:warn?[warn]:[]});
+  save();closeModal();renderAll();
+}
+function saveIndepTask(){
+  const text=document.getElementById('it-text').value.trim();if(!text)return;
+  S.tasks.push({id:S.nextTaskId++,text,done:false,warns:[]});
+  save();closeModal();renderTasks();
+}
+function saveLearn(){
+  const title=document.getElementById('ln-title').value.trim();if(!title)return;
+  const sub=document.getElementById('ln-sub').value.trim()||'自学';
+  S.learns.push({id:S.nextLearnId++,title,sub,pct:0});
+  save();closeModal();renderLearn();
+}
+
+function showModal(html){document.getElementById('modal-inner').innerHTML=html;document.getElementById('modal-bg').classList.add('on');}
+function closeModal(){document.getElementById('modal-bg').classList.remove('on');kickMut=null;}
+function closeMBG(e){if(e.target===document.getElementById('modal-bg'))closeModal();}
+
+load();
+setInterval(load,30000);
+</script>
+</body>
+</html>

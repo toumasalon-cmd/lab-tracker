@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>实验室</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;background:#f2f2f7;color:#1c1c1e;min-height:100vh;padding-bottom:80px}
+h1,h2,h3,p,div,span{-webkit-font-smoothing:antialiased}
+
+.hd{padding:52px 20px 0;background:#f2f2f7}
+.hd-sub{font-size:13px;color:#8e8e93}
+.hd-title{font-size:32px;font-weight:700;letter-spacing:-0.5px;margin-top:2px}
+.sync{font-size:11px;color:#8e8e93;padding:6px 20px;text-align:right}
+
+.seg-wrap{padding:0 20px;margin:8px 0}
+.seg{display:flex;background:#e5e5ea;border-radius:9px;padding:2px;gap:2px}
+.seg-btn{flex:1;font-size:13px;padding:7px 0;text-align:center;border-radius:7px;color:#8e8e93;font-weight:500;cursor:pointer;transition:all 0.15s}
+.seg-btn.on{background:#1c1c1e;color:#fff;font-weight:600}
+
+.sec{display:none;padding:0 20px}
+.sec.on{display:block}
+
+.group-label{font-size:11px;font-weight:600;color:#8e8e93;letter-spacing:0.4px;text-transform:uppercase;margin:20px 0 8px}
+
+.card{background:#fff;border-radius:13px;margin-bottom:10px;overflow:hidden}
+
+.batch-card{background:#fff;border-radius:13px;margin-bottom:10px}
+.batch-hd{padding:14px 16px 10px;display:flex;align-items:flex-start;justify-content:space-between}
+.batch-name{font-size:17px;font-weight:600;color:#1c1c1e}
+.batch-step{font-size:13px;color:#8e8e93;margin-top:2px}
+.step-bar{display:flex;gap:3px;padding:0 16px 14px}
+.step-seg{height:3px;border-radius:2px;flex:1;background:#e5e5ea}
+.step-seg.done{background:#1c1c1e}
+.step-seg.curr{background:#8e8e93}
+.mut-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 14px}
+.mut-chip{font-size:12px;padding:4px 10px;border-radius:20px;font-weight:500;background:#f2f2f7;color:#3c3c43}
+.mut-chip.fail{background:#ffd6d6;color:#cc0000}
+
+.task-row{display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border-top:0.5px solid #f2f2f7}
+.task-row:first-child{border-top:none}
+.chk{width:24px;height:24px;border-radius:50%;border:1.5px solid #d1d1d6;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;margin-top:1px}
+.chk.on{background:#1c1c1e;border-color:#1c1c1e}
+.chk.on::after{content:'';width:7px;height:4px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translateY(-1px);display:block}
+.task-body{flex:1}
+.task-text{font-size:15px;line-height:1.4;color:#1c1c1e}
+.task-text.done{color:#8e8e93;text-decoration:line-through}
+.task-warn{font-size:12px;color:#8e8e93;margin-top:4px;line-height:1.5;padding:6px 10px;background:#fafafa;border-radius:6px;border-left:2px solid #e5e5ea}
+
+.mut-row{display:flex;align-items:center;padding:13px 16px;border-top:0.5px solid #f2f2f7;gap:10px}
+.mut-row:first-child{border-top:none}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.d-ok{background:#34c759}
+.d-go{background:#1c1c1e}
+.d-pend{background:#d1d1d6}
+.d-fail{background:#ff3b30}
+.mut-info{flex:1}
+.mut-name-t{font-size:15px;color:#1c1c1e}
+.mut-batch{font-size:12px;color:#8e8e93;margin-top:1px}
+.mut-step-t{font-size:12px;color:#8e8e93;text-align:right}
+
+.learn-row{padding:14px 16px;border-top:0.5px solid #f2f2f7}
+.learn-row:first-child{border-top:none}
+.learn-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.learn-title{font-size:15px;color:#1c1c1e}
+.learn-sub{font-size:12px;color:#8e8e93;margin-top:2px}
+.learn-pct{font-size:15px;font-weight:600;color:#1c1c1e}
+.bar-bg{height:3px;background:#e5e5ea;border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;background:#1c1c1e;border-radius:2px;transition:width 0.3s}
+.learn-btns{display:flex;gap:8px;margin-top:10px}
+.learn-btn{flex:1;padding:7px;font-size:13px;border-radius:8px;border:1px solid #e5e5ea;background:#fff;color:#1c1c1e;cursor:pointer;font-weight:500;text-align:center}
+
+.tabbar{position:fixed;bottom:0;left:0;right:0;background:rgba(242,242,247,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:0.5px solid #e5e5ea;display:flex;padding:8px 0 20px;z-index:100}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+.tab-ic{font-size:22px;color:#8e8e93}
+.tab-ic.on{color:#1c1c1e}
+.tab-lb{font-size:10px;color:#8e8e93;font-weight:500}
+.tab-lb.on{color:#1c1c1e}
+
+.empty{text-align:center;padding:40px 20px;color:#8e8e93;font-size:14px}
+.loading{text-align:center;padding:40px;color:#8e8e93;font-size:14px}
+</style>
+</head>
+<body>
+<div class="hd">
+  <div class="hd-sub" id="hd-date"></div>
+  <div class="hd-title" id="hd-title">今日</div>
+</div>
+<div class="sync" id="sync">加载中...</div>
+
+<div class="seg-wrap">
+  <div class="seg">
+    <div class="seg-btn on" onclick="sw('today')">任务</div>
+    <div class="seg-btn" onclick="sw('batches')">批次</div>
+    <div class="seg-btn" onclick="sw('learn')">学习</div>
+  </div>
+</div>
+
+<div class="sec on" id="sec-today"><div class="loading">加载中...</div></div>
+<div class="sec" id="sec-batches"><div class="loading">加载中...</div></div>
+<div class="sec" id="sec-learn"><div class="loading">加载中...</div></div>
+
+<div class="tabbar">
+  <div class="tab" onclick="sw('today')">
+    <span class="tab-ic on" id="tic-today">&#xe6b1;</span>
+    <span class="tab-lb on" id="tlb-today">今日</span>
+  </div>
+  <div class="tab" onclick="sw('batches')">
+    <span class="tab-ic" id="tic-batches">&#xe4b5;</span>
+    <span class="tab-lb" id="tlb-batches">批次</span>
+  </div>
+  <div class="tab" onclick="sw('learn')">
+    <span class="tab-ic" id="tic-learn">&#xe4bd;</span>
+    <span class="tab-lb" id="tlb-learn">学习</span>
+  </div>
+</div>
+
+<script>
+const SB_URL='https://yyzfcskdwhhmfyhfnixp.supabase.co';
+const SB_KEY='sb_publishable_yc02v_odmbh7FAixILXsWA_vpPfzw6B';
+const STEPS=['PCR','纯化','消化','连接','转化','涂板','测序','跑蛋白'];
+let S={batches:[],tasks:[],learns:[]};
+let cur='today';
+
+const tabs=['today','batches','learn'];
+const titles={today:'今日',batches:'批次',learn:'学习'};
+
+async function load(){
+  try{
+    const r=await fetch(`${SB_URL}/rest/v1/lab_state?id=eq.main&select=data`,{headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}});
+    const rows=await r.json();
+    if(rows&&rows[0]&&rows[0].data&&rows[0].data.batches){
+      const d=rows[0].data;
+      S.batches=d.batches||[];
+      S.tasks=d.tasks||[];
+      S.learns=d.learns||[];
+    }
+    setSynced();
+  }catch(e){document.getElementById('sync').textContent='离线';}
+  render();
+}
+
+async function save(){
+  try{
+    await fetch(`${SB_URL}/rest/v1/lab_state?id=eq.main`,{method:'PATCH',headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({data:{batches:S.batches,tasks:S.tasks,learns:S.learns,nextBatchId:S.nextBatchId,nextTaskId:S.nextTaskId,nextLearnId:S.nextLearnId},updated_at:new Date().toISOString()})});
+    setSynced();
+  }catch(e){document.getElementById('sync').textContent='同步失败';}
+}
+
+function setSynced(){document.getElementById('sync').textContent='已同步 '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});}
+
+function sw(t){
+  cur=t;
+  tabs.forEach(n=>{
+    document.getElementById('sec-'+n).classList.toggle('on',n===t);
+    document.getElementById('tic-'+n).classList.toggle('on',n===t);
+    document.getElementById('tlb-'+n).classList.toggle('on',n===t);
+  });
+  document.getElementById('hd-title').textContent=titles[t];
+  document.querySelectorAll('.seg-btn').forEach((el,i)=>{el.classList.toggle('on',tabs[i]===t);});
+  render();
+}
+
+function render(){
+  if(cur==='today')renderToday();
+  if(cur==='batches')renderBatches();
+  if(cur==='learn')renderLearn();
+}
+
+function renderToday(){
+  const el=document.getElementById('sec-today');
+  const active=S.batches.filter(b=>b.status==='active');
+  if(!active.length&&!S.tasks.filter(t=>!t.done).length){
+    el.innerHTML='<div class="empty">今日暂无任务</div>';return;
+  }
+  let html='';
+  if(active.length){
+    html+='<div class="group-label">批次进行中</div>';
+    active.forEach(b=>{
+      const doneSegs=STEPS.slice(0,b.step).map((_,i)=>`<div class="step-seg done"></div>`).join('');
+      const currSeg=b.step<STEPS.length?`<div class="step-seg curr"></div>`:'';
+      const restSegs=STEPS.slice(b.step+1).map(()=>`<div class="step-seg"></div>`).join('');
+      const chips=b.mutations.map(m=>`<span class="mut-chip${m.status==='fail'?' fail':''}">${m.name}</span>`).join('');
+      const pendTasks=S.tasks.filter(t=>t.batchId===b.id&&!t.done);
+      const taskRows=pendTasks.map(t=>`
+        <div class="task-row">
+          <div class="chk${t.done?' on':''}" onclick="togTask(${t.id})"></div>
+          <div class="task-body">
+            <div class="task-text${t.done?' done':''}">${t.text}</div>
+            ${(t.warns||[]).map(w=>`<div class="task-warn">${w}</div>`).join('')}
+          </div>
+        </div>`).join('');
+      html+=`<div class="batch-card">
+        <div class="batch-hd">
+          <div><div class="batch-name">${b.name}</div><div class="batch-step">当前：${STEPS[b.step]||'完成'}</div></div>
+        </div>
+        <div class="step-bar">${doneSegs}${currSeg}${restSegs}</div>
+        <div class="mut-chips">${chips}</div>
+        ${taskRows}
+      </div>`;
+    });
+  }
+  const miscTasks=S.tasks.filter(t=>!t.batchId&&!t.done);
+  if(miscTasks.length){
+    html+='<div class="group-label">其他任务</div><div class="card">';
+    miscTasks.forEach(t=>{
+      html+=`<div class="task-row">
+        <div class="chk" onclick="togTask(${t.id})"></div>
+        <div class="task-body">
+          <div class="task-text">${t.text}</div>
+          ${(t.warns||[]).map(w=>`<div class="task-warn">${w}</div>`).join('')}
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  }
+  const doneTasks=S.tasks.filter(t=>t.done);
+  if(doneTasks.length){
+    html+='<div class="group-label">已完成</div><div class="card">';
+    doneTasks.forEach(t=>{
+      html+=`<div class="task-row">
+        <div class="chk on" onclick="togTask(${t.id})"></div>
+        <div class="task-body"><div class="task-text done">${t.text}</div></div>
+      </div>`;
+    });
+    html+='</div>';
+  }
+  el.innerHTML=html;
+}
+
+function renderBatches(){
+  const el=document.getElementById('sec-batches');
+  if(!S.batches.length){el.innerHTML='<div class="empty">暂无批次，在电脑端创建</div>';return;}
+  const active=S.batches.filter(b=>b.status==='active');
+  const done=S.batches.filter(b=>b.status==='done');
+  let html='';
+  if(active.length){
+    html+='<div class="group-label">进行中</div>';
+    active.forEach(b=>{
+      const doneSegs=STEPS.slice(0,b.step).map(()=>`<div class="step-seg done"></div>`).join('');
+      const currSeg=b.step<STEPS.length?`<div class="step-seg curr"></div>`:'';
+      const restSegs=STEPS.slice(b.step+1).map(()=>`<div class="step-seg"></div>`).join('');
+      const chips=b.mutations.map(m=>`<span class="mut-chip${m.status==='fail'?' fail':''}">${m.name}</span>`).join('');
+      html+=`<div class="batch-card">
+        <div class="batch-hd"><div><div class="batch-name">${b.name}</div><div class="batch-step">当前步骤：${STEPS[b.step]||'—'}</div></div></div>
+        <div class="step-bar">${doneSegs}${currSeg}${restSegs}</div>
+        <div class="mut-chips">${chips}</div>
+      </div>`;
+    });
+  }
+  if(done.length){
+    html+='<div class="group-label">已完成</div>';
+    done.forEach(b=>{
+      const chips=b.mutations.map(m=>`<span class="mut-chip">${m.name}</span>`).join('');
+      html+=`<div class="batch-card">
+        <div class="batch-hd"><div><div class="batch-name" style="color:#8e8e93">${b.name}</div><div class="batch-step">已完成</div></div></div>
+        <div class="mut-chips">${chips}</div>
+      </div>`;
+    });
+  }
+  el.innerHTML=html;
+}
+
+function renderLearn(){
+  const el=document.getElementById('sec-learn');
+  if(!S.learns.length){el.innerHTML='<div class="empty">暂无学习项目，在电脑端添加</div>';return;}
+  let html='<div class="card">';
+  S.learns.forEach(l=>{
+    html+=`<div class="learn-row">
+      <div class="learn-top">
+        <div><div class="learn-title">${l.title}</div><div class="learn-sub">${l.sub}</div></div>
+        <div class="learn-pct">${l.pct}%</div>
+      </div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${l.pct}%"></div></div>
+      <div class="learn-btns">
+        <div class="learn-btn" onclick="updLearn(${l.id},-10)">−10%</div>
+        <div class="learn-btn" onclick="updLearn(${l.id},10)">+10%</div>
+      </div>
+    </div>`;
+  });
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+function togTask(id){
+  const t=S.tasks.find(x=>x.id===id);
+  if(t){t.done=!t.done;save();renderToday();}
+}
+function updLearn(id,d){
+  const l=S.learns.find(x=>x.id===id);
+  if(l){l.pct=Math.max(0,Math.min(100,l.pct+d));save();renderLearn();}
+}
+
+document.getElementById('hd-date').textContent=new Date().toLocaleDateString('zh-CN',{month:'long',day:'numeric',weekday:'long'});
+load();
+setInterval(load,30000);
+</script>
+</body>
+</html>
